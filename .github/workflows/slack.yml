@@ -1,0 +1,72 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v2
+
+    # Your deployment steps here...
+
+    - name: Notify Slack
+      if: always()
+      uses: rtCamp/action-slack-notify@v2.1.1
+      with:
+        status: ${{ job.status }}
+        fields: repo,commit,actor,job,status,steps,run_number
+        custom_payload: |
+          {
+            "attachments": [
+              {
+                "fallback": "Deployment ${{ job.status }}",
+                "color": "#36a64f",
+                "title": "Deployment ${{ job.status }}",
+                "text": "Deployment of the latest code to production is ${{ job.status }}.",
+                "fields": [
+                  {
+                    "title": "Repository",
+                    "value": "${{ github.repository }}",
+                    "short": true
+                  },
+                  {
+                    "title": "Commit",
+                    "value": "${{ github.sha }}",
+                    "short": true
+                  },
+                  {
+                    "title": "Actor",
+                    "value": "${{ github.actor }}",
+                    "short": true
+                  },
+                  {
+                    "title": "Job",
+                    "value": "${{ job.name }}",
+                    "short": true
+                  },
+                  {
+                    "title": "Status",
+                    "value": "${{ job.status }}",
+                    "short": true
+                  },
+                  {
+                    "title": "Steps",
+                    "value": "${{ job.steps }}",
+                    "short": false
+                  },
+                  {
+                    "title": "Run Number",
+                    "value": "${{ github.run_number }}",
+                    "short": true
+                  }
+                ]
+              }
+            ]
+          }
+        env: ${{ toJson(env) }}
+        secrets: ${{ toJson(secrets) }}
