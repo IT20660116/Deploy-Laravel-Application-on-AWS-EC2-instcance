@@ -13,11 +13,7 @@ jobs:
       with:
         php-version: '7.4'
     - name: Install dependencies
-      run: composer install --no-dev
-    - name: Discover packages
-      run: php artisan package:discover --ansi
-    - name: Clear cache
-      run: php artisan cache:clear
+      run: csudo apt-get update && sudo apt-get install rsync -y
     - name: Sync code to EC2 instance
       uses: easingthemes/ssh-deploy@v2.2.0
       with:
