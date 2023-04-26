@@ -1,24 +1,38 @@
-name: Deploy to EC2 instance
+name: Deploy to EC2
+
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-    - name: Setup PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '7.4'
-    - name: Install dependencies
-      run: sudo apt-get update && sudo apt-get install rsync -y
-    - name: Sync code to EC2 instance
-      uses: easingthemes/ssh-deploy@v2.2.0
-      with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-        ssh-known-hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
-        remote-ssh-user: ${{ secrets.REMOTE_SSH_USER }}
-        remote-ssh-host: ${{ secrets.REMOTE_SSH_HOST }}
-        remote-ssh-path: /var/www/html
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        
+      - name: Print SSH private key
+        run: echo "${{ secrets.SSH_PRIVATE_KEY }}"
+         
+      - name: Convert SSH private key format
+        run: echo "${{ secrets.SSH_PRIVATE_KEY }}" | sed 's/\\n/\n/g' > ssh_key.pem && chmod 400 ssh_key.pem
+        
+      - name: Install rsync
+        run: sudo apt-get update && sudo apt-get install rsync -y
+
+      - name: Deploy code to EC2 instance
+        run: |
+          rsync -rav -e "ssh -o StrictHostKeyChecking=no" --exclude='.git/' --exclude='.github/' --exclude='.env' ./ ${{ secrets.REMOTE_SSH_USER }}@${{ secrets.REMOTE_SSH_HOST }}:/var/www/html/laravelCICD/Deploy-Laravel-Application-on-AWS-EC2-instcance
+          ssh ${{ secrets.REMOTE_SSH_USER }}@<${{ REMOTE.SSH.HOST }}> "cd /var/www/html/laravelCICD/Deploy-Laravel-Application-on-AWS-EC2-instcance && sudo chown -R www-data:www-data storage bootstrap/cache && php artisan cache:clear && php artisan config:cache"
+
+      - name: Send Slack notification
+        if: ${{ job.status == 'success' }}
+        uses: rtCamp/action-slack-notify@v2.1.0
+        env:
+          SLACK_COLOR: good
+          SLACK_ICON_EMOJI: ':rocket:'
+          SLACK_TITLE: 'Laravel application deployment successful!'
+          SLACK_MESSAGE: 'The Laravel application has been deployed to the EC2 instance.'
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
