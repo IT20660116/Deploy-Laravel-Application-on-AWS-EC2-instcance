@@ -1,0 +1,24 @@
+name: Deploy to EC2 instance
+on:
+  push:
+    branches: [ main ]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '7.4'
+    - name: Install dependencies
+      run: composer install --no-dev
+    - name: Sync code to EC2 instance
+      uses: easingthemes/ssh-deploy@v2.1.15
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+        ssh-known-hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
+        remote-ssh-user: ${{ secrets.REMOTE_SSH_USER }}
+        remote-ssh-host: ${{ secrets.REMOTE_SSH_HOST }}
+        remote-ssh-path: /var/www/html
