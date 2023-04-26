@@ -19,8 +19,7 @@ jobs:
         curl -sS <https://getcomposer.org/installer> | php
         sudo mv composer.phar /usr/local/bin/composer
         composer install
-				
-
+	
     - name: Deploy code
       uses: easingthemes/ssh-deploy@v2.0.6
       with:
